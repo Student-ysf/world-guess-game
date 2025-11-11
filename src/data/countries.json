@@ -145,7 +145,6 @@
   { "name": "Ukraine",  "continent": "Europe", "positionInContinent": 43 },
   { "name": "United Kingdom", "aliases": ["UK","Britain","England"], "continent": "Europe", "positionInContinent": 44 },
   { "name": "Vatican ",  "continent": "Europe", "positionInContinent": 45 },
-
   { "name": "Antigua and Barbuda",  "continent": "North America", "positionInContinent": 1 },
   { "name": "Bahamas",  "continent": "North America", "positionInContinent": 2 },
   { "name": "Barbados",  "continent": "North America", "positionInContinent": 3 },
@@ -182,7 +181,6 @@
   { "name": "Suriname",  "continent": "South America", "positionInContinent": 10 },
   { "name": "Uruguay",  "continent": "South America", "positionInContinent": 11 },
   { "name": "Venezuela",  "continent": "South America", "positionInContinent": 12 },
-
   { "name": "Australia",  "continent": "Oceania", "positionInContinent": 1 },
   { "name": "Fiji",  "continent": "Oceania", "positionInContinent": 2 },
   { "name": "Kiribati",  "continent": "Oceania", "positionInContinent": 3 },

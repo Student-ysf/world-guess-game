@@ -1,51 +1,86 @@
-// src/App.js
 import React, { useState, useEffect } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import countries from "./data/countries.json";
 import "./App.css";
 
+// دالة توحيد النص لمنع الاختلاف بين اسم الخريطة واسم JSON
+const normalize = (str = "") =>
+  str
+    .toLowerCase()
+    .replace(/[\s'-]/g, "") // إزالة المسافات - ' -
+    .replace(/[éèêë]/g, "e")
+    .replace(/[áàâä]/g, "a")
+    .replace(/[íìîï]/g, "i")
+    .replace(/[óòôö]/g, "o")
+    .replace(/[úùûü]/g, "u");
+
 function App() {
   const [found, setFound] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(900); // 15 دقيقة
+  const [timeLeft, setTimeLeft] = useState(900);
   const [gameOver, setGameOver] = useState(false);
-  const [gameStarted, setGameStarted] = useState(false); // هل بدأ اللعب؟
+  const [gameStarted, setGameStarted] = useState(false);
+  const [inputValue, setInputValue] = useState("");
 
   const checkCountry = (value) => {
     if (gameOver || !gameStarted) return;
+    const trimmed = (value || "").trim();
+    if (!trimmed) return;
 
-    const txt = value.toLowerCase().trim();
+    const txt = normalize(trimmed);
     const match = countries.find(
       (c) =>
-        c.name.toLowerCase() === txt ||
-        (c.aliases && c.aliases.some((a) => a.toLowerCase() === txt))
+        normalize(c.name) === txt ||
+        (c.aliases && c.aliases.some((a) => normalize(a) === txt))
     );
 
-    if (match && !found.includes(match.name)) {
-      setFound([...found, match.name]);
-      const audio = new Audio("/correct.mp3");
-      audio.play();
-      document.getElementById("countryInput").value = "";
+    // تحقق باستخدام normalize لمقارنة الأسماء لتجنب اختلاف الحروف/علامات التشكيل
+    if (match && !found.some((f) => normalize(f) === normalize(match.name))) {
+      setFound((prev) => [...prev, match.name]);
+      try {
+        const audio = new Audio("/correct.mp3");
+        audio.play().catch(() => {
+          /* تجاهل أخطاء التشغيل الصوتي (بعض المتصفحات تمنع التشغيل التلقائي) */
+        });
+      } catch (e) {
+        // لا تفعل شيئًا إن فشل إنشاء الـ Audio
+      }
+      setInputValue("");
     }
   };
 
-  // العد التنازلي
+  // عدّاد اللعبة - نضع الـ effect على gameStarted فقط، ونستخدم التابع الوظيفي لتحديث الوقت
   useEffect(() => {
     if (!gameStarted) return;
-    if (timeLeft <= 0) {
-      setGameOver(true);
-      return;
-    }
+
     const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setGameOver(true);
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
+
     return () => clearInterval(timer);
-  }, [timeLeft, gameStarted]);
+  }, [gameStarted]);
 
   const resetGame = () => {
     setFound([]);
     setTimeLeft(900);
     setGameOver(false);
     setGameStarted(false);
+    setInputValue("");
+  };
+
+  // عند الضغط على ابدأ نعيد التهيئة ونشغل اللعبة
+  const startGame = () => {
+    setFound([]);
+    setTimeLeft(900);
+    setGameOver(false);
+    setGameStarted(true);
+    setInputValue("");
   };
 
   const getCountriesByContinent = (continent) =>
@@ -68,7 +103,6 @@ function App() {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  // تقييم الأداء بناءً على عدد الدول التي تم تخمينها
   const getPerformance = () => {
     const percent = (found.length / countries.length) * 100;
     if (percent >= 90) return "ممتاز 🌟";
@@ -79,14 +113,12 @@ function App() {
 
   return (
     <div style={{ display: "flex", padding: 20, fontFamily: "Arial, sans-serif" }}>
-      {/* الخريطة على اليسار */}
       <div style={{ flex: 2 }}>
         <h1>لعبة تخمين الدول</h1>
 
-        {/* زر البداية */}
         {!gameStarted && (
           <button
-            onClick={() => setGameStarted(true)}
+            onClick={startGame}
             style={{
               padding: "10px 20px",
               fontSize: 16,
@@ -100,21 +132,24 @@ function App() {
           </button>
         )}
 
-        {/* العد التنازلي */}
         {gameStarted && <h2>الوقت المتبقي: {formatTime(timeLeft)}</h2>}
 
-        {/* خانة إدخال الدولة */}
         {gameStarted && !gameOver && (
           <input
             id="countryInput"
-            placeholder="اكتب اسم دولة أو الاختصار..."
+            placeholder="اكتب اسم دولة أو الاختصار واضغط Enter..."
             style={{ padding: "6px", width: "50%", fontSize: 14 }}
-            onChange={(e) => checkCountry(e.target.value)}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                checkCountry(inputValue);
+              }
+            }}
             autoFocus
           />
         )}
 
-        {/* زر إعادة اللعب بعد انتهاء الوقت */}
         {gameOver && (
           <button
             onClick={resetGame}
@@ -124,7 +159,6 @@ function App() {
           </button>
         )}
 
-        {/* الخريطة داخل إطار */}
         {gameStarted && (
           <div
             style={{
@@ -134,7 +168,7 @@ function App() {
               backgroundColor: "rgba(255, 255, 255, 0.95)",
               boxShadow: "0 4px 15px rgba(0,0,0,0.3)",
               marginTop: 20,
-              marginLeft: "-20px", // زحزحة لليسار
+              marginLeft: "-20px",
             }}
           >
             <ComposableMap
@@ -146,7 +180,11 @@ function App() {
               <Geographies geography="https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json">
                 {({ geographies }) =>
                   geographies.map((geo) => {
-                    const isFound = found.includes(geo.properties.name);
+                    const geoName = geo.properties.name;
+                    const isFound = found.some(
+                      (f) => normalize(f) === normalize(geoName)
+                    );
+
                     return (
                       <Geography
                         key={geo.rsmKey}
@@ -163,7 +201,6 @@ function App() {
           </div>
         )}
 
-        {/* محاولاتك وتقييمك تحت الخريطة */}
         {gameStarted && (
           <div style={{ marginTop: 20 }}>
             <h3>محاولاتك: {found.length} دولة</h3>
@@ -172,12 +209,12 @@ function App() {
         )}
       </div>
 
-      {/* تابلو القارات على اليمين */}
       {gameStarted && (
         <div style={{ flex: 1, marginLeft: 20 }}>
           {continents.map((continent) => (
             <div key={continent} style={{ marginBottom: 20 }}>
               <h3>{continent}</h3>
+
               <div
                 style={{
                   display: "grid",
@@ -187,22 +224,25 @@ function App() {
                   padding: "5px",
                 }}
               >
-                {getCountriesByContinent(continent).map((c) => (
-                  <div
-                    key={c.name}
-                    style={{
-                      height: "30px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: found.includes(c.name) ? "#2ecc71" : "#eee",
-                      border: "1px solid #ccc",
-                      fontSize: 12,
-                    }}
-                  >
-                    {found.includes(c.name) ? c.name : ""}
-                  </div>
-                ))}
+                {getCountriesByContinent(continent).map((c) => {
+                  const isFound = found.some((f) => normalize(f) === normalize(c.name));
+                  return (
+                    <div
+                      key={c.name}
+                      style={{
+                        height: "30px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: isFound ? "#2ecc71" : "#eee",
+                        border: "1px solid #ccc",
+                        fontSize: 12,
+                      }}
+                    >
+                      {isFound ? c.name : ""}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}
