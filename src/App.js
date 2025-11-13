@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import countries from "./data/countries.json";
 import "./App.css";
@@ -24,6 +24,11 @@ function App() {
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [showResult, setShowResult] = useState(false);
+  const [performanceText, setPerformanceText] = useState("");
+
+  // لإدارة الصوت
+  const audioRef = useRef(null);
 
   const checkCountry = (value) => {
     if (gameOver || !gameStarted) return;
@@ -40,8 +45,8 @@ function App() {
     if (match && !found.some((f) => normalize(f) === normalize(match.name))) {
       setFound((prev) => [...prev, match.name]);
       try {
-        const audio = new Audio("/correct.mp3");
-        audio.play().catch(() => {});
+        const correctAudio = new Audio("/correct.mp3");
+        correctAudio.play().catch(() => {});
       } catch (e) {}
       setInputValue("");
     }
@@ -49,35 +54,76 @@ function App() {
 
   useEffect(() => {
     if (!gameStarted) return;
-
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          setGameOver(true);
+          endGame();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, [gameStarted]);
 
+  const playPerformanceAudio = (performance) => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+
+    let audioPath = "";
+    if (performance.includes("ممتاز")) audioPath = "/wooww.mp3";
+    else if (performance.includes("جيد")) audioPath = "/not-bad-not-bad.mp3";
+    else audioPath = "/tb-lk.mp3";
+
+    audioRef.current = new Audio(audioPath);
+    audioRef.current.play().catch(() => {});
+  };
+
+  const endGame = () => {
+    setGameOver(true);
+    const percent = (found.length / countries.length) * 100;
+    let performance = "";
+
+    if (percent >= 90) performance = "ممتاز 🌟";
+    else if (percent >= 70) performance = "جيد 👍";
+    else performance = "ضعيف ❌";
+
+    setPerformanceText(performance);
+    setShowResult(true);
+
+    playPerformanceAudio(performance);
+  };
+
   const resetGame = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
     setFound([]);
     setTimeLeft(900);
     setGameOver(false);
     setGameStarted(false);
     setInputValue("");
+    setShowResult(false);
+    setPerformanceText("");
   };
 
   const startGame = () => {
+    try {
+      const startAudio = new Audio("/start.mp3"); // صوت البداية
+      startAudio.play().catch(() => {});
+    } catch (e) {}
+
     setFound([]);
     setTimeLeft(900);
     setGameOver(false);
     setGameStarted(true);
     setInputValue("");
+    setShowResult(false);
+    setPerformanceText("");
   };
 
   const getCountriesByContinent = (continent) =>
@@ -100,163 +146,80 @@ function App() {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  const getPerformance = () => {
-    const percent = (found.length / countries.length) * 100;
-    if (percent >= 90) return "ممتاز 🌟";
-    if (percent >= 70) return "جيد 👍";
-    if (percent >= 40) return "متوسط ⚡";
-    return "ضعيف ❌";
-  };
-
   return (
-    <div style={{ display: "flex", padding: 20, fontFamily: "Arial, sans-serif" }}>
+    <div>
       {!gameStarted ? (
-        // ===== واجهة البداية =====
-        <div
-          style={{
-            width: "100vw",
-            height: "100vh",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            textAlign: "center",
-            backgroundColor: "#27DDF5",
-          }}
-        >
-          <h1
-            style={{
-              fontSize: "40px",
-              color: "white",
-              textShadow: "2px 2px 8px rgba(0,0,0,0.4)",
-              marginBottom: "30px",
-            }}
-          >
-            🌍 لعبة تخمين الدول
-          </h1>
-
-          {/* صورة GIF */}
-          <img
-            src="/pngegg.png"
-            alt="Earth rotating"
-            style={{
-              width: "300px",
-              height: "300px",
-              objectFit: "contain",
-              background: "transparent",
-              marginBottom: "40px",
-            }}
-          />
-
-          {/* زر البدء */}
-          <button
-            onClick={startGame}
-            style={{
-              padding: "12px 30px",
-              fontSize: "18px",
-              backgroundColor: "#ffeb3b",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-            }}
-          >
+        <div className="start-screen">
+          <h1 className="start-title animate-title">🌍 لعبة تخمين الدول</h1>
+          <img src="/pngegg.png" alt="كرة الأرض تدور" className="start-gif animate-gif" />
+          <button onClick={startGame} className="start-button">
             ابدأ اللعبة
           </button>
+          <p className="start-desc">
+           ! اختبر معرفتك بجغرافيا العالم 🌎  واكتب أسماء الدول بسرعة قبل انتهاء الوقت
+          </p>
         </div>
       ) : (
-        // ===== واجهة اللعبة =====
-        <>
-          <div style={{ flex: 2 }}>
-            <h1>لعبة تخمين الدول</h1>
+        <div className="container">
+          <div className="left-panel">
+            <div>
+              <h1 className="title">لعبة تخمين الدول</h1>
+              <h2 className="timer">الوقت المتبقي: {formatTime(timeLeft)}</h2>
 
-            {gameStarted && <h2>الوقت المتبقي: {formatTime(timeLeft)}</h2>}
+              {!gameOver && (
+                <input
+                  id="countryInput"
+                  className="country-input"
+                  placeholder="اكتب اسم دولة أو الاختصار واضغط Enter..."
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") checkCountry(inputValue);
+                  }}
+                  autoFocus
+                />
+              )}
 
-            {!gameOver && (
-              <input
-                id="countryInput"
-                placeholder="اكتب اسم دولة أو الاختصار واضغط Enter..."
-                style={{ padding: "6px", width: "50%", fontSize: 14 }}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    checkCountry(inputValue);
-                  }
-                }}
-                autoFocus
-              />
-            )}
+              <div className="map-container">
+                <ComposableMap
+                  projectionConfig={{ scale: 100 }}
+                  width={600}
+                  height={300}
+                  className="map"
+                >
+                  <Geographies geography={geoJsonData}>
+                    {({ geographies }) =>
+                      geographies.map((geo) => {
+                        const geoName = geo.properties.name;
+                        const isFound = found.some(
+                          (f) => normalize(f) === normalize(geoName)
+                        );
+                        return (
+                          <Geography
+                            key={geo.rsmKey}
+                            geography={geo}
+                            fill={isFound ? "#2ecc71" : "#DDD"}
+                            stroke="#000"
+                            strokeWidth={0.5}
+                          />
+                        );
+                      })
+                    }
+                  </Geographies>
+                </ComposableMap>
+              </div>
 
-            {gameOver && (
-              <button
-                onClick={resetGame}
-                style={{ padding: "10px 20px", fontSize: 16, marginTop: 10 }}
-              >
-                إعادة اللعب
-              </button>
-            )}
-
-            <div
-              style={{
-                padding: "10px",
-                border: "3px solid #fff",
-                borderRadius: "10px",
-                backgroundColor: "rgba(255, 255, 255, 0.95)",
-                boxShadow: "0 4px 15px rgba(0,0,0,0.3)",
-                marginTop: 20,
-                marginLeft: "-20px",
-              }}
-            >
-              <ComposableMap
-                projectionConfig={{ scale: 100 }}
-                width={600}
-                height={300}
-                style={{ width: "100%", height: "auto" }}
-              >
-                <Geographies geography={geoJsonData}>
-                  {({ geographies }) =>
-                    geographies.map((geo) => {
-                      const geoName = geo.properties.name;
-                      const isFound = found.some(
-                        (f) => normalize(f) === normalize(geoName)
-                      );
-
-                      return (
-                        <Geography
-                          key={geo.rsmKey}
-                          geography={geo}
-                          fill={isFound ? "#2ecc71" : "#DDD"}
-                          stroke="#000"
-                          strokeWidth={0.5}
-                        />
-                      );
-                    })
-                  }
-                </Geographies>
-              </ComposableMap>
-            </div>
-
-            <div style={{ marginTop: 20 }}>
-              <h3>محاولاتك: {found.length} دولة</h3>
-              <h3>تقييم محاولاتك: {getPerformance()}</h3>
+              <div className="attempts">
+                <h3>محاولاتك: {found.length} دولة</h3>
+              </div>
             </div>
           </div>
 
-          <div style={{ flex: 1, marginLeft: 20 }}>
+          <div className="right-panel">
             {continents.map((continent) => (
-              <div key={continent} style={{ marginBottom: 20 }}>
+              <div key={continent} className="continent-panel">
                 <h3>{continent}</h3>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(5, 1fr)",
-                    gap: "5px",
-                    border: "1px solid #ccc",
-                    padding: "5px",
-                  }}
-                >
+                <div className="continent-grid">
                   {getCountriesByContinent(continent).map((c) => {
                     const isFound = found.some(
                       (f) => normalize(f) === normalize(c.name)
@@ -264,15 +227,7 @@ function App() {
                     return (
                       <div
                         key={c.name}
-                        style={{
-                          height: "30px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          backgroundColor: isFound ? "#2ecc71" : "#eee",
-                          border: "1px solid #ccc",
-                          fontSize: 12,
-                        }}
+                        className={`country-cell ${isFound ? "found" : ""}`}
                       >
                         {isFound ? c.name : ""}
                       </div>
@@ -282,7 +237,19 @@ function App() {
               </div>
             ))}
           </div>
-        </>
+
+          {/* واجهة النتيجة */}
+          {showResult && (
+            <div className="result-overlay">
+              <div className="result-box">
+                <h2>انتهت اللعبة!</h2>
+                <p>أداؤك: {performanceText}</p>
+                <p>لقد اكتشفت {found.length} من {countries.length} دولة.</p>
+                <button className="reset-button" onClick={resetGame}>إعادة اللعب</button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
