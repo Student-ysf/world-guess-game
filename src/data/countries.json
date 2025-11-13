@@ -11,7 +11,7 @@
   { "name": "Chad",  "continent": "Africa", "positionInContinent": 10 },
   { "name": "Comoros", "continent": "Africa", "positionInContinent": 11 },
   { "name": "Congo (Brazzaville)",  "continent": "Africa", "positionInContinent": 12 },
-  { "name": "Dem. Rep. Congo (Kinshasa)", "aliases": ["RCD"], "continent": "Africa", "positionInContinent": 13 },
+  { "name": "Dem. Rep. Congo (Kinshasa)", "aliases": ["RD congo"], "continent": "Africa", "positionInContinent": 13 },
   { "name": "Djibouti",  "continent": "Africa", "positionInContinent": 14 },
   { "name": "Egypt",  "continent": "Africa", "positionInContinent": 15 },
   { "name": "Equatorial Guinea",  "continent": "Africa", "positionInContinent": 16 },
