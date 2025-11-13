@@ -144,7 +144,7 @@ function App() {
       {!gameStarted ? (
         <div className="start-screen">
           <h1 className="start-title animate-title">🌍 لعبة تخمين الدول</h1>
-          <img src="/earth.gif" alt="كرة الأرض تدور" className="start-gif animate-gif" />
+          <img src="/pngegg.png" alt="كرة الأرض تدور" className="start-gif animate-gif" />
           <button onClick={startGame} className="start-button">
             ابدأ اللعبة
           </button>
