@@ -11,7 +11,7 @@
   { "name": "Chad",  "continent": "Africa", "positionInContinent": 10 },
   { "name": "Comoros", "continent": "Africa", "positionInContinent": 11 },
   { "name": "Congo (Brazzaville)",  "continent": "Africa", "positionInContinent": 12 },
-  { "name": "Congo (Kinshasa)", "aliases": ["RCD"], "continent": "Africa", "positionInContinent": 13 },
+  { "name": "Dem. Rep. Congo (Kinshasa)", "aliases": ["RCD"], "continent": "Africa", "positionInContinent": 13 },
   { "name": "Djibouti",  "continent": "Africa", "positionInContinent": 14 },
   { "name": "Egypt",  "continent": "Africa", "positionInContinent": 15 },
   { "name": "Equatorial Guinea",  "continent": "Africa", "positionInContinent": 16 },
@@ -167,7 +167,7 @@
   { "name": "Saint Lucia",  "continent": "North America", "positionInContinent": 20 },
   { "name": "Saint Vincent and the Grenadines",  "continent": "North America", "positionInContinent": 21 },
   { "name": "Trinidad and Tobago",  "continent": "North America", "positionInContinent": 22 },
-  { "name": "United States", "aliases": ["usa", "USA", "United States of America"], "continent": "North America", "positionInContinent": 23 },
+  { "name": "United States of America", "aliases": ["usa", "USA", "United States of America"], "continent": "North America", "positionInContinent": 23 },
 
   { "name": "Argentina",  "continent": "South America", "positionInContinent": 1 },
   { "name": "Bolivia",  "continent": "South America", "positionInContinent": 2 },
