@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import countries from "./data/countries.json";
 import "./App.css";
@@ -27,9 +27,35 @@ function App() {
   const [showResult, setShowResult] = useState(false);
   const [performanceText, setPerformanceText] = useState("");
 
-  // لإدارة الصوت
-  const audioRef = useRef(null);
+  // تشغيل الصوت بناءً على الأداء
+  const playPerformanceAudio = (performance) => {
+    let audioPath = "";
+    if (performance === "ممتاز 🌟") audioPath = "/wooww.mp3";
+    else if (performance === "جيد 👍") audioPath = "/not-bad-not-bad.mp3";
+    else audioPath = "/tb-lk.mp3";
 
+    try {
+      const audio = new Audio(audioPath);
+      audio.play().catch(() => {});
+    } catch (e) {}
+  };
+
+  // دالة إنهاء اللعبة
+  const endGame = useCallback(() => {
+    setGameOver(true);
+    const percent = (found.length / countries.length) * 100;
+    let performance = "";
+
+    if (percent >= 90) performance = "ممتاز 🌟";
+    else if (percent >= 70) performance = "جيد 👍";
+    else performance = "ضعيف ❌";
+
+    setPerformanceText(performance);
+    setShowResult(true);
+    playPerformanceAudio(performance);
+  }, [found]);
+
+  // تحقق من الدولة المدخلة
   const checkCountry = (value) => {
     if (gameOver || !gameStarted) return;
     const trimmed = (value || "").trim();
@@ -45,13 +71,14 @@ function App() {
     if (match && !found.some((f) => normalize(f) === normalize(match.name))) {
       setFound((prev) => [...prev, match.name]);
       try {
-        const correctAudio = new Audio("/correct.mp3");
-        correctAudio.play().catch(() => {});
+        const audio = new Audio("/correct.mp3");
+        audio.play().catch(() => {});
       } catch (e) {}
       setInputValue("");
     }
   };
 
+  // المؤقت
   useEffect(() => {
     if (!gameStarted) return;
     const timer = setInterval(() => {
@@ -65,56 +92,13 @@ function App() {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [gameStarted]);
+  }, [gameStarted, endGame]);
 
-  const playPerformanceAudio = (performance) => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-
-    let audioPath = "";
-    if (performance.includes("ممتاز")) audioPath = "/wooww.mp3";
-    else if (performance.includes("جيد")) audioPath = "/not-bad-not-bad.mp3";
-    else audioPath = "/tb-lk.mp3";
-
-    audioRef.current = new Audio(audioPath);
-    audioRef.current.play().catch(() => {});
-  };
-
-  const endGame = () => {
-    setGameOver(true);
-    const percent = (found.length / countries.length) * 100;
-    let performance = "";
-
-    if (percent >= 90) performance = "ممتاز 🌟";
-    else if (percent >= 70) performance = "جيد 👍";
-    else performance = "ضعيف ❌";
-
-    setPerformanceText(performance);
-    setShowResult(true);
-
-    playPerformanceAudio(performance);
-  };
-
-  const resetGame = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    setFound([]);
-    setTimeLeft(900);
-    setGameOver(false);
-    setGameStarted(false);
-    setInputValue("");
-    setShowResult(false);
-    setPerformanceText("");
-  };
-
+  // بدء اللعبة
   const startGame = () => {
     try {
-      const startAudio = new Audio("/start.mp3"); // صوت البداية
-      startAudio.play().catch(() => {});
+      const audio = new Audio("/start.mp3"); // صوت البداية
+      audio.play().catch(() => {});
     } catch (e) {}
 
     setFound([]);
@@ -123,7 +107,16 @@ function App() {
     setGameStarted(true);
     setInputValue("");
     setShowResult(false);
-    setPerformanceText("");
+  };
+
+  // إعادة اللعبة
+  const resetGame = () => {
+    setFound([]);
+    setTimeLeft(900);
+    setGameOver(false);
+    setGameStarted(false);
+    setInputValue("");
+    setShowResult(false);
   };
 
   const getCountriesByContinent = (continent) =>
@@ -151,12 +144,13 @@ function App() {
       {!gameStarted ? (
         <div className="start-screen">
           <h1 className="start-title animate-title">🌍 لعبة تخمين الدول</h1>
-          <img src="/pngegg.png" alt="كرة الأرض تدور" className="start-gif animate-gif" />
+          <img src="/earth.gif" alt="كرة الأرض تدور" className="start-gif animate-gif" />
           <button onClick={startGame} className="start-button">
             ابدأ اللعبة
           </button>
           <p className="start-desc">
-           ! اختبر معرفتك بجغرافيا العالم 🌎  واكتب أسماء الدول بسرعة قبل انتهاء الوقت
+            اختبر معرفتك بجغرافيا العالم 🌎  
+            واكتب أسماء الدول بسرعة قبل انتهاء الوقت!
           </p>
         </div>
       ) : (
