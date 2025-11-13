@@ -198,5 +198,5 @@
   { "name": "Tuvalu",  "continent": "Oceania", "positionInContinent": 13 },
   { "name": "Vanuatu",  "continent": "Oceania", "positionInContinent": 14 },
 
-  { "name": "Western Sahara", "aliases": ["SADR"], "continent": "Africa", "positionInContinent": 55 }
+  { "name": "W. Sahara", "aliases": ["SADR"], "continent": "Africa", "positionInContinent": 55 }
 ]
