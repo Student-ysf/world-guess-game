@@ -46,8 +46,8 @@
   { "name": "Sierra Leone",  "continent": "Africa", "positionInContinent": 44 },
   { "name": "Somalia",  "continent": "Africa", "positionInContinent": 45 },
   { "name": "South Africa",  "continent": "Africa", "positionInContinent": 46 },
-  { "name": "S. Sudan", "aliases": ["south sudan"], "continent": "Africa", "positionInContinent": 47 }
-{ "name": "sudan", "continent": "Africa", "positionInContinent": 48 }
+  { "name": "S. Sudan", "aliases": ["south sudan"], "continent": "Africa", "positionInContinent": 47 },
+{ "name": "sudan", "continent": "Africa", "positionInContinent": 48 },
   { "name": "Tanzania",  "continent": "Africa", "positionInContinent": 49 },
   { "name": "Togo", "continent": "Africa", "positionInContinent": 50 },
   { "name": "Tunisia",  "continent": "Africa", "positionInContinent": 51 },
