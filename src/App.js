@@ -3,11 +3,11 @@ import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import countries from "./data/countries.json";
 import "./App.css";
 
-// دالة توحيد النص لمنع الاختلاف بين اسم الخريطة واسم JSON
+// دالة توحيد النصوص (لتفادي مشاكل المسافات والعلامات)
 const normalize = (str = "") =>
   str
     .toLowerCase()
-    .replace(/[\s'-]/g, "") // إزالة المسافات - ' -
+    .replace(/[\s'-]/g, "")
     .replace(/[éèêë]/g, "e")
     .replace(/[áàâä]/g, "a")
     .replace(/[íìîï]/g, "i")
@@ -20,38 +20,62 @@ function App() {
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [geoNames, setGeoNames] = useState([]); // أسماء الدول في الخريطة
 
+  // ✅ طباعة أسماء الدول الموجودة في الخريطة
+  useEffect(() => {
+    fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
+      .then((res) => res.json())
+      .then(async (worldData) => {
+        const topojson = await import("topojson-client");
+        const geojson = topojson.feature(
+          worldData,
+          worldData.objects.countries
+        );
+        const names = geojson.features.map((f) => f.properties.name);
+        setGeoNames(names);
+        console.log("✅ أسماء الدول في الخريطة:", names);
+      });
+  }, []);
+
+  // ✅ البحث الذكي عن الدولة
   const checkCountry = (value) => {
     if (gameOver || !gameStarted) return;
     const trimmed = (value || "").trim();
     if (!trimmed) return;
 
     const txt = normalize(trimmed);
-    const match = countries.find(
+
+    // محاولة المطابقة مع الدول في ملف countries.json
+    let match = countries.find(
       (c) =>
         normalize(c.name) === txt ||
-        (c.aliases && c.aliases.some((a) => normalize(a) === txt))
+        (c.aliases && c.aliases.some((a) => normalize(a) === txt)) ||
+        normalize(c.name).includes(txt)
     );
 
-    // تحقق باستخدام normalize لمقارنة الأسماء لتجنب اختلاف الحروف/علامات التشكيل
+    // إذا لم توجد مطابقة في JSON، نحاول مطابقة مباشرة مع أسماء الخريطة
+    if (!match) {
+      const geoMatch = geoNames.find(
+        (name) => normalize(name) === txt || normalize(name).includes(txt)
+      );
+      if (geoMatch)
+        match = { name: geoMatch, aliases: [], continent: "Unknown" };
+    }
+
     if (match && !found.some((f) => normalize(f) === normalize(match.name))) {
       setFound((prev) => [...prev, match.name]);
       try {
         const audio = new Audio("/correct.mp3");
-        audio.play().catch(() => {
-          /* تجاهل أخطاء التشغيل الصوتي (بعض المتصفحات تمنع التشغيل التلقائي) */
-        });
-      } catch (e) {
-        // لا تفعل شيئًا إن فشل إنشاء الـ Audio
-      }
+        audio.play().catch(() => {});
+      } catch {}
       setInputValue("");
     }
   };
 
-  // عدّاد اللعبة - نضع الـ effect على gameStarted فقط، ونستخدم التابع الوظيفي لتحديث الوقت
+  // ⏱️ المؤقت
   useEffect(() => {
     if (!gameStarted) return;
-
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -62,7 +86,6 @@ function App() {
         return prev - 1;
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, [gameStarted]);
 
@@ -74,7 +97,6 @@ function App() {
     setInputValue("");
   };
 
-  // عند الضغط على ابدأ نعيد التهيئة ونشغل اللعبة
   const startGame = () => {
     setFound([]);
     setTimeLeft(900);
@@ -114,7 +136,7 @@ function App() {
   return (
     <div style={{ display: "flex", padding: 20, fontFamily: "Arial, sans-serif" }}>
       <div style={{ flex: 2 }}>
-        <h1>لعبة تخمين الدول</h1>
+        <h1>🌍 لعبة تخمين الدول</h1>
 
         {!gameStarted && (
           <button
@@ -132,20 +154,16 @@ function App() {
           </button>
         )}
 
-        {gameStarted && <h2>الوقت المتبقي: {formatTime(timeLeft)}</h2>}
+        {gameStarted && <h2>⏱ الوقت المتبقي: {formatTime(timeLeft)}</h2>}
 
         {gameStarted && !gameOver && (
           <input
             id="countryInput"
-            placeholder="اكتب اسم دولة أو الاختصار واضغط Enter..."
+            placeholder="اكتب اسم دولة أو اختصار واضغط Enter..."
             style={{ padding: "6px", width: "50%", fontSize: 14 }}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                checkCountry(inputValue);
-              }
-            }}
+            onKeyDown={(e) => e.key === "Enter" && checkCountry(inputValue)}
             autoFocus
           />
         )}
@@ -155,7 +173,7 @@ function App() {
             onClick={resetGame}
             style={{ padding: "10px 20px", fontSize: 16, marginTop: 10 }}
           >
-            إعادة اللعب
+            🔁 إعادة اللعب
           </button>
         )}
 
@@ -184,7 +202,6 @@ function App() {
                     const isFound = found.some(
                       (f) => normalize(f) === normalize(geoName)
                     );
-
                     return (
                       <Geography
                         key={geo.rsmKey}
@@ -203,8 +220,8 @@ function App() {
 
         {gameStarted && (
           <div style={{ marginTop: 20 }}>
-            <h3>محاولاتك: {found.length} دولة</h3>
-            <h3>تقييم محاولاتك: {getPerformance()}</h3>
+            <h3>✅ محاولاتك: {found.length} دولة</h3>
+            <h3>📊 تقييمك: {getPerformance()}</h3>
           </div>
         )}
       </div>
@@ -214,7 +231,6 @@ function App() {
           {continents.map((continent) => (
             <div key={continent} style={{ marginBottom: 20 }}>
               <h3>{continent}</h3>
-
               <div
                 style={{
                   display: "grid",
@@ -225,7 +241,9 @@ function App() {
                 }}
               >
                 {getCountriesByContinent(continent).map((c) => {
-                  const isFound = found.some((f) => normalize(f) === normalize(c.name));
+                  const isFound = found.some(
+                    (f) => normalize(f) === normalize(c.name)
+                  );
                   return (
                     <div
                       key={c.name}
