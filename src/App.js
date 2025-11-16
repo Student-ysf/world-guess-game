@@ -5,10 +5,18 @@ import countries from "./data/countries.json";
 import topoData from "./data/countries-custom.json";
 import "./App.css";
 
-// تحويل TopoJSON إلى GeoJSON
 const geoJsonData = feature(topoData, topoData.objects.countries);
 
-// دالة لتطبيع النصوص لمطابقة أسماء الدول
+let globalAudio = null;
+
+const stopAudio = () => {
+  if (globalAudio) {
+    globalAudio.pause();
+    globalAudio.currentTime = 0;
+    globalAudio = null;
+  }
+};
+
 const normalize = (str = "") =>
   str
     .toLowerCase()
@@ -28,20 +36,20 @@ function App() {
   const [showResult, setShowResult] = useState(false);
   const [performanceText, setPerformanceText] = useState("");
 
-  // تشغيل الصوت بناءً على الأداء
   const playPerformanceAudio = (performance) => {
+    stopAudio(); 
+
     let audioPath = "";
     if (performance === "ممتاز 🌟") audioPath = "/wooww.mp3";
     else if (performance === "جيد 👍") audioPath = "/not-bad-not-bad.mp3";
     else audioPath = "/tb-lk.mp3";
 
     try {
-      const audio = new Audio(audioPath);
-      audio.play().catch(() => {});
+      globalAudio = new Audio(audioPath);
+      globalAudio.play().catch(() => {});
     } catch (e) {}
   };
 
-  // إنهاء اللعبة
   const endGame = useCallback(() => {
     setGameOver(true);
     const percent = (found.length / countries.length) * 100;
@@ -55,7 +63,6 @@ function App() {
     setShowResult(true);
     playPerformanceAudio(performance);
 
-    // إرسال النتيجة إلى n8n webhook
     fetch("https://youcefmine.app.n8n.cloud/webhook-test/world-quiz-result", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -69,7 +76,6 @@ function App() {
 
   }, [found]);
 
-  // التحقق من الدولة المدخلة
   const checkCountry = (value) => {
     if (gameOver || !gameStarted) return;
     const trimmed = (value || "").trim();
@@ -92,7 +98,6 @@ function App() {
     }
   };
 
-  // المؤقت
   useEffect(() => {
     if (!gameStarted) return;
     const timer = setInterval(() => {
@@ -108,8 +113,9 @@ function App() {
     return () => clearInterval(timer);
   }, [gameStarted, endGame]);
 
-  // بدء اللعبة
   const startGame = () => {
+    stopAudio(); 
+
     try {
       const audio = new Audio("/start.mp3");
       audio.play().catch(() => {});
@@ -123,8 +129,9 @@ function App() {
     setShowResult(false);
   };
 
-  // إعادة اللعبة
   const resetGame = () => {
+    stopAudio(); 
+
     setFound([]);
     setTimeLeft(900);
     setGameOver(false);
@@ -133,7 +140,6 @@ function App() {
     setShowResult(false);
   };
 
-  // تجميع الدول حسب القارات
   const getCountriesByContinent = (continent) =>
     countries
       .filter((c) => c.continent === continent)
@@ -148,7 +154,6 @@ function App() {
     "Oceania",
   ];
 
-  // تنسيق الوقت
   const formatTime = (sec) => {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
@@ -163,8 +168,8 @@ function App() {
           <img src="/pngegg.png" alt="كرة الأرض تدور" className="start-gif animate-gif" />
           <button onClick={startGame} className="start-button">ابدأ اللعبة</button>
           <p className="start-desc">
-            اختبر معرفتك بجغرافيا العالم 🌎 واكتب أسماء الدول بسرعة قبل انتهاء الوقت!
-          </p>
+            !اختبر معرفتك بجغرافيا العالم 🌎 واكتب أسماء الدول بسرعة قبل انتهاء الوقت
+    </p>
         </div>
       ) : (
         <div className="container">
